@@ -11,7 +11,6 @@
 #include <SysCall.h>
 #include <SdFatConfig.h>
 #include <MinimumSerial.h>
-#include <FreeStack.h>
 #include <BlockDriver.h>
 //#include <SdFatmainpage.h>
 #include "SdFat.h"
@@ -31,6 +30,9 @@ byte colourbyte = 0;
 
 SdFatSdioEX sd;
 SdFile file;
+
+#define ROWSPERDRAW 80
+uint16_t awColors[240 * ROWSPERDRAW];  // hold colors for one row at a time...
 
 
 void setup() {
@@ -58,6 +60,23 @@ void setup() {
 
 
 }
+
+uint32_t FreeRam() { // for Teensy 3.0
+	uint32_t stackTop;
+	uint32_t heapTop;
+
+	// current position of the stack.
+	stackTop = (uint32_t)&stackTop;
+
+	// current position of heap.
+	void* hTop = malloc(1);
+	heapTop = (uint32_t)hTop;
+	free(hTop);
+
+	// The difference is the free, available ram.
+	return stackTop - heapTop;
+}
+
 char filename[255];
 
 // the loop function runs over and over again until power down or reset
@@ -95,7 +114,6 @@ void loop() {
 	//delay(1500);
 }
 
-#define ROWSPERDRAW 80
 #define BUFFPIXEL 240
 
 //===========================================================
@@ -108,14 +126,13 @@ bool bmpDraw(const char *filename, uint8_t x, uint16_t y) {
 	uint32_t bmpImageoffset;        // Start of image data in file
 	uint32_t rowSize;               // Not always = bmpWidth; may have padding
 	uint8_t  sdbuffer[3 * BUFFPIXEL*ROWSPERDRAW]; // pixel buffer (R+G+B per pixel)
-	uint16_t buffidx = sizeof(sdbuffer); // Current position in sdbuffer
+	uint32_t buffidx = sizeof(sdbuffer); // Current position in sdbuffer
 	boolean  goodBmp = false;       // Set to true on valid header parse
 	boolean  flip = true;        // BMP is stored bottom-to-top
 	int      w, h, row, col;
 	uint8_t  r, g, b;
 	uint32_t pos = 0, startTime = millis();
 
-	uint16_t awColors[240* ROWSPERDRAW];  // hold colors for one row at a time...
 
 	if ((x >= tft.width()) || (y >= tft.height())) return false;
 
@@ -206,6 +223,8 @@ bool bmpDraw(const char *filename, uint8_t x, uint16_t y) {
 				Serial.print(F("Loaded in "));
 				Serial.print(millis() - startTime);
 				Serial.println(" ms");
+				Serial.print(F("Free Stack :"));
+				Serial.println(FreeRam());
 			} // end goodBmp
 		}
 	}
