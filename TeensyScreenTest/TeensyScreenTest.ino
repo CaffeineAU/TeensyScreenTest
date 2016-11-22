@@ -39,12 +39,12 @@ void setup() {
 	delay(200);
 
 	tft.begin();
-	tft.fillScreen(ILI9341_BLUE);
+	tft.fillScreen(ILI9341_WHITE);
 
 	tft.setFont(Arial_8);
 
 	Serial.print(F("Initializing SD card..."));
-	tft.println(F("Init SD card..."));
+	//tft.println(F("Init SD card..."));
 	tft.setTextColor(ILI9341_BLACK);
 
 	//if (!(SD.begin(BUILTIN_SDCARD))) {
@@ -58,7 +58,8 @@ void setup() {
 	Serial.println("OK!");
 
 	//bmpDrawScale("triangle.bmp", 0, 0,2);
-
+	int border = 5;
+	tft.fillRect((tft.width() / 4) - border, (tft.height() / 4) - border, 120 + (border * 2), 160 + (border * 2), ILI9341_BLACK);
 
 }
 
@@ -83,6 +84,8 @@ int xoff = 1;
 int yoff = 0;
 int drawscale = 4;
 
+char prevfilename[255] = "";
+
 // the loop function runs over and over again until power down or reset
 void loop() {
 	//CHSV colour = CHSV(colourbyte++, 255, 255);
@@ -99,26 +102,41 @@ void loop() {
 
 	while (file.openNext(sd.vwd(), O_READ)) {
 		file.getName(filename, 255);
-		Serial.println(filename);
-		Serial.print("x:");
-		Serial.print(xoff);
-		Serial.print(" y:");
-		Serial.println(yoff);
-		if (bmpDrawScale(filename, xoff % 240 - 1, yoff, drawscale))
+		//Serial.println(filename);
+		//Serial.print("x:");
+		//Serial.print(xoff);
+		//Serial.print(" y:");
+		//Serial.println(yoff);
+		if (bmpDrawScale(filename, 60, 80, 2))
 		{
-			//delay(1500);
-			//file.printName(&tft);
-			xoff += (240 / drawscale);
-			//if (xoff >= 240)
+			//if (bmpDrawScale(filename, xoff % 240 - 1, yoff, drawscale))
 			//{
-			//	xoff = 0;
+			//	//delay(1500);
+			//	//file.printName(&tft);
+			//	xoff += (240 / drawscale);
+			//	//if (xoff >= 240)
+			//	//{
+			//	//	xoff = 0;
+			//	//}
+			//	yoff = (xoff / 240) * (320 / drawscale);
+			//	if (yoff >= 320)
+			//	{
+			//		yoff = 0;
+			//		xoff = 1;
+			//	}
 			//}
-			yoff = (xoff / 240) * (320 / drawscale);
-			if (yoff >= 320)
-			{
-				yoff = 0;
-				xoff = 1;
-			}
+			tft.setCursor(60, 250);
+			tft.setTextColor(ILI9341_WHITE);
+			Serial.print("writing white ");
+			Serial.print(prevfilename);
+			tft.println(prevfilename);
+			tft.setTextColor(ILI9341_BLACK);
+			tft.setCursor(60, 250);
+			tft.println(filename);
+			Serial.print(" writing black ");
+			Serial.println(filename);
+			strcpy(prevfilename, filename);
+			delay(2000);
 		}
 		file.close();
 	}
