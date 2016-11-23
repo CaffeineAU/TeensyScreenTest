@@ -8,6 +8,7 @@
 
 
 //#include <hsv2rgb.h>
+#include "font_Michroma.h"
 #include "font_Oxygen-Bold.h"
 
 #include <SysCall.h>
@@ -42,7 +43,7 @@ void setup() {
 	tft.begin();
 	tft.fillScreen(ILI9341_WHITE);
 
-	tft.setFont(Oxygen_12_Bold);
+	tft.setFont(Oxygen_14_Bold);
 
 	Serial.print(F("Initializing SD card..."));
 	//tft.println(F("Init SD card..."));
@@ -132,14 +133,14 @@ void loop() {
 
 			tft.setCursor(60, 250);
 			tft.setTextColor(ILI9341_WHITE);
-			Serial.print("writing white ");
-			Serial.print(prevfilename);
+			//Serial.print("writing white ");
+			//Serial.print(prevfilename);
 			tft.println(prevfilename);
 			tft.setTextColor(ILI9341_BLACK);
 			tft.setCursor(60, 250);
 			tft.println(filenametoprint);
-			Serial.print(" writing black ");
-			Serial.println(filenametoprint);
+			//Serial.print(" writing black ");
+			//Serial.println(filenametoprint);
 			strcpy(prevfilename, filenametoprint);
 			delay(2000);
 		}
@@ -192,14 +193,14 @@ bool bmpDrawScale(const char *filename, uint8_t x, uint16_t y, int scale) {
 	if ((x >= tft.width()) || (y >= tft.height())) return false;
 
 	Serial.println();
-	Serial.print(F("Loading image '"));
-	Serial.print(filename);
-	Serial.println('\'');
+	Serial.print("Filename: ");
+	Serial.println(filename);
+	//Serial.println('\'');
 
-	Serial.print("x:");
-	Serial.print(x);
-	Serial.print(" y:");
-	Serial.println(y);
+	//Serial.print("x:");
+	//Serial.print(x);
+	//Serial.print(" y:");
+	//Serial.println(y);
 
 
 	// Open requested file on SD card
@@ -220,14 +221,14 @@ bool bmpDrawScale(const char *filename, uint8_t x, uint16_t y, int scale) {
 		bmpHeight = read32(bmpFile);
 		if (read16(bmpFile) == 1) { // # planes -- must be '1'
 			bmpDepth = read16(bmpFile); // bits per pixel
-			Serial.print(F("Bit Depth: ")); Serial.println(bmpDepth);
+			//Serial.print(F("Bit Depth: ")); Serial.println(bmpDepth);
 			if ((bmpDepth == 24) && (read32(bmpFile) == 0)) { // 0 = uncompressed
 
 				goodBmp = true; // Supported BMP format -- proceed!
-				Serial.print(F("Image size: "));
-				Serial.print(bmpWidth);
-				Serial.print('x');
-				Serial.println(bmpHeight);
+				//Serial.print(F("Image size: "));
+				//Serial.print(bmpWidth);
+				//Serial.print('x');
+				//Serial.println(bmpHeight);
 
 				// BMP rows are padded (if needed) to 4-byte boundary
 				rowSize = (bmpWidth * 3 + 3) & ~3;
@@ -260,8 +261,8 @@ bool bmpDrawScale(const char *filename, uint8_t x, uint16_t y, int scale) {
 						pos = bmpImageoffset + row * rowSize;
 					if (bmpFile.position() != pos) { // Need seek?
 						bmpFile.seek(pos);
-						Serial.print("Seeking to ");
-						Serial.println(pos);
+						//Serial.print("Seeking to ");
+						//Serial.println(pos);
 						buffidx = sizeof(sdbuffer); // Force buffer reload
 					}
 					for (int i = ROWSPERDRAW; i > 0; i--)
@@ -298,11 +299,9 @@ bool bmpDrawScale(const char *filename, uint8_t x, uint16_t y, int scale) {
 					}
 					tft.writeRect(x, y + (row / scale), bmpWidth / scale, ROWSPERDRAW / scale, awColors);
 				} // end scanline
-				Serial.print(F("Loaded in "));
-				Serial.print(millis() - startTime);
-				Serial.println(" ms");
-				Serial.print(F("Free Stack :"));
-				Serial.println(FreeRam());
+				Serial.print(F("Loaded in ")); Serial.print(millis() - startTime); Serial.println(" ms");
+				//Serial.print(F("Free Stack :"));
+				//Serial.println(FreeRam());
 			} // end goodBmp
 		}
 	}
@@ -312,11 +311,6 @@ bool bmpDrawScale(const char *filename, uint8_t x, uint16_t y, int scale) {
 	}
 	bmpFile.close();
 	if (!goodBmp) Serial.println(F("BMP format not recognized."));
-	//tft.setCursor(5, 5);
-	//tft.print(filename);
-	//tft.print(" : ");
-	//tft.print(millis() - startTime);
-	//tft.println(" ms");
 	return true;
 }
 
@@ -327,17 +321,15 @@ bool bmpDrawScale(const char *filename, uint8_t x, uint16_t y, int scale) {
 // May need to reverse subscript order if porting elsewhere.
 
 uint16_t read16(File &f) {
-	uint16_t result;
-	((uint8_t *)&result)[0] = f.read(); // LSB
-	((uint8_t *)&result)[1] = f.read(); // MSB
-	return result;
+	uint8_t readValues[2];
+	f.read(readValues, 2);
+	uint16_t *result = (uint16_t*)readValues;
+	return result[0];
 }
 
 uint32_t read32(File &f) {
-	uint32_t result;
-	((uint8_t *)&result)[0] = f.read(); // LSB
-	((uint8_t *)&result)[1] = f.read();
-	((uint8_t *)&result)[2] = f.read();
-	((uint8_t *)&result)[3] = f.read(); // MSB
-	return result;
+	uint8_t readValues[4];
+	f.read(readValues, 4);
+	uint32_t *result = (uint32_t*)readValues;
+	return result[0];
 }
