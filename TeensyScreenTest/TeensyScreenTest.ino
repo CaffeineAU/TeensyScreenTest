@@ -1,13 +1,14 @@
 /*
- Name:		TeensyScreenTest.ino
- Created:	11/16/2016 11:33:00 PM
- Author:	Liam O
+Name:		TeensyScreenTest.ino
+Created:	11/16/2016 11:33:00 PM
+Author:	Liam O
 */
 
 // the setup function runs once when you press reset or power the board
 
 
 //#include <hsv2rgb.h>
+#include <TouchScreen.h>
 #include "font_Michroma.h"
 #include "font_Oxygen-Bold.h"
 
@@ -36,18 +37,32 @@ SdFile file;
 #define ROWSPERDRAW 80
 uint16_t awColors[240 * ROWSPERDRAW];  // hold colors for one row at a time...
 
+#define YP A3  // must be an analog pin, use "An" notation!
+#define XM A0  // must be an analog pin, use "An" notation!
+#define YM A1   // can be a digital pin
+#define XP A2   // can be a digital pin
+TouchScreen ts = TouchScreen(XP, YP, XM, YM, 281);
+#define BACKCOLOUR ILI9341_BLUE
+#define FORECOLOUR ILI9341_WHITE
+
+#define TS_MINX 169
+#define TS_MAXX 916
+#define TS_MINY 95
+#define TS_MAXY 913
+
+
 
 void setup() {
 	delay(200);
 
 	tft.begin();
-	tft.fillScreen(ILI9341_WHITE);
+	tft.fillScreen(BACKCOLOUR);
 
-	tft.setFont(Oxygen_14_Bold);
+	tft.setFont(Oxygen_10_Bold);
 
-	Serial.print(F("Initializing SD card..."));
-	//tft.println(F("Init SD card..."));
-	tft.setTextColor(ILI9341_BLACK);
+	//Serial.print(F("Initializing SD card..."));
+	////tft.println(F("Init SD card..."));
+	//tft.setTextColor(ILI9341_BLACK);
 
 	//if (!(SD.begin(BUILTIN_SDCARD))) {
 	//	while (1) {
@@ -55,13 +70,13 @@ void setup() {
 	//		delay(500);
 	//	}
 	//}
-	sd.begin();
+	//sd.begin();
 
 	Serial.println("OK!");
 
 	//bmpDrawScale("triangle.bmp", 0, 0,2);
-	int border = 5;
-	tft.fillRect((tft.width() / 4) - border, (tft.height() / 4) - border, 120 + (border * 2), 160 + (border * 2), ILI9341_BLACK);
+	//int border = 5;
+	//tft.fillRect((tft.width() / 4) - border, (tft.height() / 4) - border, 120 + (border * 2), 160 + (border * 2), ILI9341_BLACK);
 
 }
 
@@ -87,6 +102,8 @@ int yoff = 0;
 int drawscale = 4;
 
 char prevfilename[255] = "";
+String prevScreenString = "";
+String screenString = "";
 
 // the loop function runs over and over again until power down or reset
 void loop() {
@@ -100,52 +117,79 @@ void loop() {
 	//tft.fillRoundRect(20, 20, 200, 200, 15, CL(BGcolourRGB.red, BGcolourRGB.green, BGcolourRGB.blue));
 	//tft.
 	//delay(20);
-	sd.vwd()->rewind();
 
-	while (file.openNext(sd.vwd(), O_READ)) {
-		file.getName(filename, 255);
-		//Serial.println(filename);
-		//Serial.print("x:");
-		//Serial.print(xoff);
-		//Serial.print(" y:");
-		//Serial.println(yoff);
-		if (bmpDrawScale(filename, 60, 80, 2))
-		{
-			//if (bmpDrawScale(filename, xoff % 240 - 1, yoff, drawscale))
-			//{
-			//	//delay(1500);
-			//	//file.printName(&tft);
-			//	xoff += (240 / drawscale);
-			//	//if (xoff >= 240)
-			//	//{
-			//	//	xoff = 0;
-			//	//}
-			//	yoff = (xoff / 240) * (320 / drawscale);
-			//	if (yoff >= 320)
-			//	{
-			//		yoff = 0;
-			//		xoff = 1;
-			//	}
-			//}
-			char filenametoprint[255];
-			
-			SubStringBeforeChar(filename, filenametoprint, '.');
+	TSPoint p = ts.getPoint();
+	
+	// we have some minimum pressure we consider 'valid'
+	// pressure of 0 means no pressing!
+	if (p.z > ts.pressureThreshhold) {
+		Serial.print("X = "); Serial.print(p.x);
+		Serial.print("\tY = "); Serial.print(p.y);
+		Serial.print("\tPressure = "); Serial.println(p.z);
 
-			tft.setCursor(60, 250);
-			tft.setTextColor(ILI9341_WHITE);
-			//Serial.print("writing white ");
-			//Serial.print(prevfilename);
-			tft.println(prevfilename);
-			tft.setTextColor(ILI9341_BLACK);
-			tft.setCursor(60, 250);
-			tft.println(filenametoprint);
-			//Serial.print(" writing black ");
-			//Serial.println(filenametoprint);
-			strcpy(prevfilename, filenametoprint);
-			delay(2000);
-		}
-		file.close();
+		screenString = "";
+		screenString.concat("X = "); screenString.concat(p.x);
+		screenString.concat(" Y = "); screenString.concat(p.y);
+		screenString.concat(" Pressure = "); screenString.concat(p.z);
+		LCDClearAndDrawString(screenString, 20, 20);
+
+
+		p.x = map(p.x, TS_MAXX, TS_MINX, 240, 0); p.y = map(p.y, TS_MAXY, TS_MINY, 320, 0);
+
+		tft.fillCircle(p.x, p.y, 3, ILI9341_YELLOW); // need to calibrate
 	}
+	//delay(10);
+
+	//sd.vwd()->rewind();
+
+	//while (file.openNext(sd.vwd(), O_READ)) {
+	//	file.getName(filename, 255);
+	//	//Serial.println(filename);
+	//	//Serial.print("x:");
+	//	//Serial.print(xoff);
+	//	//Serial.print(" y:");
+	//	//Serial.println(yoff);
+	//	if (bmpDrawScale(filename, 60, 80, 2))
+	//	{
+	//		//if (bmpDrawScale(filename, xoff % 240 - 1, yoff, drawscale))
+	//		//{
+	//		//	//delay(1500);
+	//		//	//file.printName(&tft);
+	//		//	xoff += (240 / drawscale);
+	//		//	//if (xoff >= 240)
+	//		//	//{
+	//		//	//	xoff = 0;
+	//		//	//}
+	//		//	yoff = (xoff / 240) * (320 / drawscale);
+	//		//	if (yoff >= 320)
+	//		//	{
+	//		//		yoff = 0;
+	//		//		xoff = 1;
+	//		//	}
+	//		//}
+	//		char filenametoprint[255];
+	//		
+	//		SubStringBeforeChar(filename, filenametoprint, '.');
+
+	//		tft.setCursor(60, 250);
+	//		tft.setTextColor(ILI9341_WHITE);
+	//		//Serial.print("writing white ");
+	//		//Serial.print(prevfilename);
+	//		tft.println(prevfilename);
+	//		tft.setTextColor(ILI9341_BLACK);
+	//		tft.setCursor(60, 250);
+	//		tft.println(filenametoprint);
+	//		//Serial.print(" writing black ");
+	//		//Serial.println(filenametoprint);
+	//		strcpy(prevfilename, filenametoprint);
+
+	//		int count = 20;
+	//		while (count-- > 0)
+	//		{
+	//		}
+	//	}
+	//	file.close();
+	//}
 
 
 
@@ -173,6 +217,18 @@ void SubStringBeforeChar(char *in, char *out, char delimiter)
 }
 
 #define BUFFPIXEL 240
+
+void LCDClearAndDrawString(String input, int x, int y)
+{
+	tft.setCursor(x, y);
+	tft.setTextColor(BACKCOLOUR);
+	tft.println(prevScreenString);
+	tft.setTextColor(FORECOLOUR);
+	tft.setCursor(x, y);
+	tft.println(screenString);
+	prevScreenString = screenString;
+
+}
 
 
 bool bmpDrawScale(const char *filename, uint8_t x, uint16_t y, int scale) {
@@ -221,16 +277,16 @@ bool bmpDrawScale(const char *filename, uint8_t x, uint16_t y, int scale) {
 		bmpHeight = read32(bmpFile);
 		if (read16(bmpFile) == 1) { // # planes -- must be '1'
 			bmpDepth = read16(bmpFile); // bits per pixel
-			//Serial.print(F("Bit Depth: ")); Serial.println(bmpDepth);
+										//Serial.print(F("Bit Depth: ")); Serial.println(bmpDepth);
 			if ((bmpDepth == 24) && (read32(bmpFile) == 0)) { // 0 = uncompressed
 
 				goodBmp = true; // Supported BMP format -- proceed!
-				//Serial.print(F("Image size: "));
-				//Serial.print(bmpWidth);
-				//Serial.print('x');
-				//Serial.println(bmpHeight);
+								//Serial.print(F("Image size: "));
+								//Serial.print(bmpWidth);
+								//Serial.print('x');
+								//Serial.println(bmpHeight);
 
-				// BMP rows are padded (if needed) to 4-byte boundary
+								// BMP rows are padded (if needed) to 4-byte boundary
 				rowSize = (bmpWidth * 3 + 3) & ~3;
 
 				// If bmpHeight is negative, image is in top-down order.
@@ -270,7 +326,7 @@ bool bmpDrawScale(const char *filename, uint8_t x, uint16_t y, int scale) {
 						int index = 0;
 
 						for (col = 0; col < (bmpWidth); col++) { // For each pixel...
-																		// Time to read more pixel data?
+																 // Time to read more pixel data?
 							if (buffidx >= sizeof(sdbuffer)) { // Indeed
 								bmpFile.read(sdbuffer, sizeof(sdbuffer));
 								buffidx = 0; // Set index to beginning
@@ -333,3 +389,4 @@ uint32_t read32(File &f) {
 	uint32_t *result = (uint32_t*)readValues;
 	return result[0];
 }
+
