@@ -60,23 +60,14 @@ void setup() {
 
 	tft.setFont(Oxygen_10_Bold);
 
-	//Serial.print(F("Initializing SD card..."));
-	////tft.println(F("Init SD card..."));
-	//tft.setTextColor(ILI9341_BLACK);
-
-	//if (!(SD.begin(BUILTIN_SDCARD))) {
-	//	while (1) {
-	//		Serial.println("Unable to access the SD card");
-	//		delay(500);
-	//	}
-	//}
-	//sd.begin();
+	Serial.print(F("Initializing SD card..."));
+	sd.begin();
 
 	Serial.println("OK!");
 
 	//bmpDrawScale("triangle.bmp", 0, 0,2);
-	//int border = 5;
-	//tft.fillRect((tft.width() / 4) - border, (tft.height() / 4) - border, 120 + (border * 2), 160 + (border * 2), ILI9341_BLACK);
+	int border = 5;
+	tft.fillRect((tft.width() / 4) - border, (tft.height() / 4) - border, 120 + (border * 2), 160 + (border * 2), ILI9341_BLACK);
 
 }
 
@@ -102,8 +93,10 @@ int yoff = 0;
 int drawscale = 4;
 
 char prevfilename[255] = "";
-String prevScreenString = "";
-String screenString = "";
+String prevTouchString = "";
+String touchString = "";
+String prevFilenameString = "";
+String filenameString = "";
 
 // the loop function runs over and over again until power down or reset
 void loop() {
@@ -119,88 +112,77 @@ void loop() {
 	//delay(20);
 
 	TSPoint p = ts.getPoint();
-	
+
 	// we have some minimum pressure we consider 'valid'
 	// pressure of 0 means no pressing!
-	if (p.z > ts.pressureThreshhold) {
-		Serial.print("X = "); Serial.print(p.x);
-		Serial.print("\tY = "); Serial.print(p.y);
-		Serial.print("\tPressure = "); Serial.println(p.z);
-
-		screenString = "";
-		screenString.concat("X = "); screenString.concat(p.x);
-		screenString.concat(" Y = "); screenString.concat(p.y);
-		screenString.concat(" Pressure = "); screenString.concat(p.z);
-		LCDClearAndDrawString(screenString, 20, 20);
-
-
-		p.x = map(p.x, TS_MAXX, TS_MINX, 240, 0); p.y = map(p.y, TS_MAXY, TS_MINY, 320, 0);
-
-		tft.fillCircle(p.x, p.y, 3, ILI9341_YELLOW); // need to calibrate
-	}
 	//delay(10);
 
-	//sd.vwd()->rewind();
+	sd.vwd()->rewind();
 
-	//while (file.openNext(sd.vwd(), O_READ)) {
-	//	file.getName(filename, 255);
-	//	//Serial.println(filename);
-	//	//Serial.print("x:");
-	//	//Serial.print(xoff);
-	//	//Serial.print(" y:");
-	//	//Serial.println(yoff);
-	//	if (bmpDrawScale(filename, 60, 80, 2))
-	//	{
-	//		//if (bmpDrawScale(filename, xoff % 240 - 1, yoff, drawscale))
-	//		//{
-	//		//	//delay(1500);
-	//		//	//file.printName(&tft);
-	//		//	xoff += (240 / drawscale);
-	//		//	//if (xoff >= 240)
-	//		//	//{
-	//		//	//	xoff = 0;
-	//		//	//}
-	//		//	yoff = (xoff / 240) * (320 / drawscale);
-	//		//	if (yoff >= 320)
-	//		//	{
-	//		//		yoff = 0;
-	//		//		xoff = 1;
-	//		//	}
-	//		//}
-	//		char filenametoprint[255];
-	//		
-	//		SubStringBeforeChar(filename, filenametoprint, '.');
+	while (file.openNext(sd.vwd(), O_READ)) {
+		file.getName(filename, 255);
+		//Serial.println(filename);
+		//Serial.print("x:");
+		//Serial.print(xoff);
+		//Serial.print(" y:");
+		//Serial.println(yoff);
+		if (bmpDrawScale(filename, 60, 80, 2))
+		{
+			//if (bmpDrawScale(filename, xoff % 240 - 1, yoff, drawscale))
+			//{
+			//	//delay(1500);
+			//	//file.printName(&tft);
+			//	xoff += (240 / drawscale);
+			//	//if (xoff >= 240)
+			//	//{
+			//	//	xoff = 0;
+			//	//}
+			//	yoff = (xoff / 240) * (320 / drawscale);
+			//	if (yoff >= 320)
+			//	{
+			//		yoff = 0;
+			//		xoff = 1;
+			//	}
+			//}
+			char filenametoprint[255];
 
-	//		tft.setCursor(60, 250);
-	//		tft.setTextColor(ILI9341_WHITE);
-	//		//Serial.print("writing white ");
-	//		//Serial.print(prevfilename);
-	//		tft.println(prevfilename);
-	//		tft.setTextColor(ILI9341_BLACK);
-	//		tft.setCursor(60, 250);
-	//		tft.println(filenametoprint);
-	//		//Serial.print(" writing black ");
-	//		//Serial.println(filenametoprint);
-	//		strcpy(prevfilename, filenametoprint);
+			SubStringBeforeChar(filename, filenametoprint, '.');
 
-	//		int count = 20;
-	//		while (count-- > 0)
-	//		{
-	//		}
-	//	}
-	//	file.close();
-	//}
+			filenameString = filenametoprint;
+			LCDClearAndDrawString(filenameString, prevFilenameString, 60, 250);
+			prevFilenameString = filenameString;
+
+			int count = 2000;
+			while (count-- > 0)
+			{
+				p = ts.getPoint();
+				//Serial.println("Checking touch");
+				if (p.z > ts.pressureThreshhold) {
+					Serial.print("X = "); Serial.print(p.x);
+					Serial.print("\tY = "); Serial.print(p.y);
+					Serial.print("\tPressure = "); Serial.println(p.z);
+
+					touchString = "";
+					touchString.concat("X = "); touchString.concat(p.x);
+					touchString.concat(" Y = "); touchString.concat(p.y);
+					touchString.concat(" Pressure = "); touchString.concat(p.z);
+					LCDClearAndDrawString(touchString, prevTouchString, 20, 20);
+					prevTouchString = touchString;
+
+
+					p.x = map(p.x, TS_MAXX, TS_MINX, 240, 0); p.y = map(p.y, TS_MAXY, TS_MINY, 320, 0);
+
+					tft.fillCircle(p.x, p.y, 3, ILI9341_YELLOW); // need to calibrate
+				}
+				delay(1);
+
+			}
+		}
+		file.close();
+	}
 
 
 
-	//bmpDraw("flowers.bmp", 0, 0);
-	//delay(1500);
-	//bmpDraw("cat.bmp", 0, 0);
-	//delay(1500);
-	//bmpDraw("spitfire.bmp", 0, 0);
-	//delay(1500);
-	//bmpDraw("spit2.bmp", 0, 0);
-	//delay(1500);
 }
 
 void SubStringBeforeChar(char *in, char *out, char delimiter)
@@ -218,15 +200,14 @@ void SubStringBeforeChar(char *in, char *out, char delimiter)
 
 #define BUFFPIXEL 240
 
-void LCDClearAndDrawString(String input, int x, int y)
+void LCDClearAndDrawString(String input, String prevInput, int x, int y)
 {
 	tft.setCursor(x, y);
 	tft.setTextColor(BACKCOLOUR);
-	tft.println(prevScreenString);
+	tft.println(prevInput);
 	tft.setTextColor(FORECOLOUR);
 	tft.setCursor(x, y);
-	tft.println(screenString);
-	prevScreenString = screenString;
+	tft.println(input);
 
 }
 
