@@ -21,6 +21,8 @@
 #include <font_ArialBold.h>
 #include <font_Arial.h>
 
+#include <FastLED/hsv2rgb.h>
+
 #define TFT_RST 8
 #define TFT_DC  9
 #define TFT_CS 10
@@ -90,8 +92,6 @@ char prevfilename[255] = "";
 
 // the loop function runs over and over again until power down or reset
 void loop() {
-	//CHSV colour = CHSV(colourbyte++, 255, 255);
-	//CRGB colourRGB = CRGB(colour);
 
 	//CHSV BGcolour = CHSV(colourbyte+128, 255, 255);
 	//CRGB BGcolourRGB = CRGB(BGcolour);
@@ -131,18 +131,21 @@ void loop() {
 			
 			SubStringBeforeChar(filename, filenametoprint, '.');
 
+	CHSV colour = CHSV(colourbyte++, 255, 255);
+	CRGB colourRGB = CRGB(colour);
 			tft.setCursor(60, 250);
 			tft.setTextColor(ILI9341_WHITE);
 			//Serial.print("writing white ");
 			//Serial.print(prevfilename);
 			tft.println(prevfilename);
-			tft.setTextColor(ILI9341_BLACK);
+	tft.setTextColor(CL(colourRGB.red, colourRGB.green, colourRGB.blue));
+			//tft.setTextColor(ILI9341_BLACK);
 			tft.setCursor(60, 250);
 			tft.println(filenametoprint);
 			//Serial.print(" writing black ");
 			//Serial.println(filenametoprint);
 			strcpy(prevfilename, filenametoprint);
-			delay(2000);
+			delay(500);
 		}
 		file.close();
 	}
