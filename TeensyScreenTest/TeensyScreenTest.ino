@@ -42,7 +42,7 @@ uint16_t awColors[240 * ROWSPERDRAW];  // hold colors for one row at a time...
 #define YM A1   // can be a digital pin
 #define XP A2   // can be a digital pin
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 281);
-#define BACKCOLOUR ILI9341_BLUE
+#define BACKCOLOUR ILI9341_BLACK
 #define FORECOLOUR ILI9341_WHITE
 
 #define TS_MINX 169
@@ -126,7 +126,7 @@ void loop() {
 		//Serial.print(xoff);
 		//Serial.print(" y:");
 		//Serial.println(yoff);
-		if (bmpDrawScale(filename, 60, 80, 2))
+		if (bmpDrawScale(filename, 60, 80,2))
 		{
 			//if (bmpDrawScale(filename, xoff % 240 - 1, yoff, drawscale))
 			//{
@@ -152,7 +152,7 @@ void loop() {
 			LCDClearAndDrawString(filenameString, prevFilenameString, 60, 250);
 			prevFilenameString = filenameString;
 
-			int count = 2000;
+			int count = 500;
 			while (count-- > 0)
 			{
 				p = ts.getPoint();
